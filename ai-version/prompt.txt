@@ -1,0 +1,8 @@
+Build a Node.js Express API using Supabase Auth as the identity provider.
+Implement these routes:
+- POST /auth/signup: takes email and password, validates input (400 if missing), calls Supabase signUp, returns 201 with user.
+- POST /auth/login: takes email and password, validates (400 if missing), calls signInWithPassword, returns 200 with access_token and refresh_token, or 401 on bad credentials.
+- POST /auth/logout: calls signOut, returns 204.
+- GET /public/info: open endpoint returning 200 with a welcome message.
+- GET /protected/profile: protected by an auth middleware that verifies the JWT with Supabase getUser(token). Returns 200 with user details, or 401 on invalid/missing token.
+Set up Swagger UI with Bearer authentication at /docs.
