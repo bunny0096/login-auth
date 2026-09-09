@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
+import publicRoutes from './routes/public.js';
+import protectedRoutes from './routes/protected.js';
 
 dotenv.config();
 
@@ -11,8 +13,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Mount auth routes
+// Mount routes
 app.use('/auth', authRoutes);
+app.use('/public', publicRoutes);
+app.use('/protected', protectedRoutes);
 
 // Root checkpoint endpoint
 app.get('/', (req, res) => {
