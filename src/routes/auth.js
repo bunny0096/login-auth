@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { supabase } from '../supabase.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -54,6 +55,20 @@ router.post('/login', async (req, res) => {
       token_type: data.session.token_type || 'bearer',
       user: data.user
     });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+// POST /auth/logout (Protected route - uses requireAuth guard)
+router.post('/logout', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+    // Return 204 ("No Content") on success
+    return res.status(204).send();
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }

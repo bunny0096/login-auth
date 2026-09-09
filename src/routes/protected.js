@@ -1,40 +1,25 @@
 import { Router } from 'express';
-import { supabase } from '../supabase.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-// GET /protected/profile (Stage 3: Token verification with Supabase)
-router.get('/profile', async (req, res) => {
-  const authHeader = req.headers['authorization'];
+// GET /protected/profile - guarded by requireAuth middleware
+router.get('/profile', requireAuth, (req, res) => {
+  return res.status(200).json({
+    id: req.user.id,
+    email: req.user.email,
+    created_at: req.user.created_at
+  });
+});
 
-  // Check if header is missing, malformed, or has no token
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  const token = authHeader.substring(7).trim();
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  try {
-    // Verify token with Supabase
-    const { data, error } = await supabase.auth.getUser(token);
-
-    // If the token is expired, tampered with, or invalid -> return 401
-    if (error || !data || !data.user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
-    }
-
-    // Return safe user metadata: id, email, account-created date
-    return res.status(200).json({
-      id: data.user.id,
-      email: data.user.email,
-      created_at: data.user.created_at
-    });
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
-  }
+// GET /protected/dashboard - second protected route proving middleware reusability
+router.get('/dashboard', requireAuth, (req, res) => {
+  return res.status(200).json({
+    message: `Welcome to your dashboard, ${req.user.email}!`,
+    user_id: req.user.id,
+    account_created: req.user.created_at,
+    role: req.user.role || 'authenticated'
+  });
 });
 
 export default router;
