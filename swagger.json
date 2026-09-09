@@ -37,6 +37,16 @@
           }
         }
       },
+      "RefreshRequest": {
+        "type": "object",
+        "required": ["refresh_token"],
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "example": "ref_9a8b7c6d5e4f3a2b1c0d"
+          }
+        }
+      },
       "ErrorResponse": {
         "type": "object",
         "properties": {
@@ -112,7 +122,7 @@
       "post": {
         "tags": ["Authentication"],
         "summary": "Authenticate user and return JWT access token",
-        "description": "Authenticates user credentials with Supabase and returns an access token and refresh token.",
+        "description": "Authenticates user credentials with Supabase and returns an access token and refresh token. Protected with brute-force rate limiting.",
         "requestBody": {
           "required": true,
           "content": {
@@ -170,6 +180,63 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Too many login attempts (Rate limited)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Exchange refresh token for fresh access token",
+        "description": "Allows clients to acquire a new access token when the current short-lived JWT expires without requiring the user to re-enter credentials.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string"
+                    },
+                    "refresh_token": {
+                      "type": "string"
+                    },
+                    "token_type": {
+                      "type": "string",
+                      "example": "bearer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing refresh token"
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
           }
         }
       }
@@ -301,6 +368,51 @@
           },
           "401": {
             "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/protected/admin": {
+      "get": {
+        "tags": ["Protected"],
+        "summary": "Access privileged admin route",
+        "description": "Demonstrates 403 Forbidden vs 401 Unauthorized. User must be authenticated AND have admin privileges.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin console access granted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "admin_user": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Token missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden - Authenticated user lacks admin permission",
             "content": {
               "application/json": {
                 "schema": {

@@ -22,4 +22,23 @@ router.get('/dashboard', requireAuth, (req, res) => {
   });
 });
 
+// GET /protected/admin - Stretch Goal: Demonstrating HTTP 403 Forbidden vs 401 Unauthorized
+// 401 = "I don't know who you are" (Missing or invalid token)
+// 403 = "I know who you are, but you are not allowed" (Authenticated, but insufficient privileges)
+router.get('/admin', requireAuth, (req, res) => {
+  const isAdmin = req.user.role === 'admin' || req.user.email === 'admin@flyrank.io';
+
+  if (!isAdmin) {
+    return res.status(403).json({
+      error: 'Forbidden: Admin access required. 401 proves identity; 403 enforces permission.'
+    });
+  }
+
+  return res.status(200).json({
+    message: 'Welcome to the privileged Admin Console!',
+    admin_user: req.user.email,
+    timestamp: new Date().toISOString()
+  });
+});
+
 export default router;
