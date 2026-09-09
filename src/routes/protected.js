@@ -1,9 +1,10 @@
 import { Router } from 'express';
+import { supabase } from '../supabase.js';
 
 const router = Router();
 
-// GET /protected/profile (Stage 2: unverified token extraction)
-router.get('/profile', (req, res) => {
+// GET /protected/profile (Stage 3: Token verification with Supabase)
+router.get('/profile', async (req, res) => {
   const authHeader = req.headers['authorization'];
 
   // Check if header is missing, malformed, or has no token
@@ -16,11 +17,24 @@ router.get('/profile', (req, res) => {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  // In Stage 2, token is not verified yet, just checking one was presented
-  return res.status(200).json({
-    message: 'Access token presented',
-    token
-  });
+  try {
+    // Verify token with Supabase
+    const { data, error } = await supabase.auth.getUser(token);
+
+    // If the token is expired, tampered with, or invalid -> return 401
+    if (error || !data || !data.user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Return safe user metadata: id, email, account-created date
+    return res.status(200).json({
+      id: data.user.id,
+      email: data.user.email,
+      created_at: data.user.created_at
+    });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
 });
 
 export default router;
